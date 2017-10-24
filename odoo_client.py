@@ -61,12 +61,10 @@ class OdooProxy():
                 if any(key_ids):
                     continue
 
-                key_id = self.models.execute_kw(self.db, self.uid, self.password, 'audit_ssh_keys.key', 'create', [{
-                    'label': key['label'], 'key_hash': key['key_hash'], 'key_type': key['key_type'], 'uri': key['key_uri']
+                self.models.execute_kw(self.db, self.uid, self.password, 'audit_ssh_keys.key', 'create', [{
+                    'label': key['label'], 'key_hash': key['key_hash'], 'key_type': key['key_type'], 'uri': key['key_uri'],
+                    'user_id': user_ids[0]
                 }])
 
-                self.models.execute_kw(self.db, self.uid, self.password, 'audit_ssh_keys.key', 'update', [{
-                    'user_ids': [[160, 158, [user_ids[0], key_id]]]
-                }])
         except Exception as e:
             print(e)
