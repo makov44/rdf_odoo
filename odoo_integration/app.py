@@ -1,27 +1,16 @@
-from SPARQLWrapper import SPARQLWrapper, JSON
+import odoo_client
+import rdf_manager
 
-
-class RdfStore:
-
-    def __init__(self):
-        self.sparql = SPARQLWrapper("http://rdf.getdyl.com:8890/sparql")
-
-    def get_hosts(self):
-        self.sparql.setQuery("""
+host_query = """
         PREFIX ns1: <http://rdf.siliconbeach.io/schema/sys/v1/>
         SELECT DISTINCT ?host ?hostUri
         WHERE { 
         ?hostUri a ns1:system_instance;
                  ns1:system_instance.hostname ?host .
         }
-        """)
+        """
 
-        self.sparql.setReturnFormat(JSON)
-        results = self.sparql.query().convert()
-        return results["results"]["bindings"]
-
-    def get_users(self):
-        self.sparql.setQuery("""
+user_query = """
                 PREFIX ns1: <http://rdf.siliconbeach.io/schema/sys/v1/>
                 SELECT DISTINCT ?user ?userUri ?hostUri
                 WHERE {
@@ -30,14 +19,9 @@ class RdfStore:
                      ns1:user.login ?user;
                      ns1:user.system ?hostUri .
                 }
-                """)
+                """
 
-        self.sparql.setReturnFormat(JSON)
-        results = self.sparql.query().convert()
-        return results["results"]["bindings"]
-
-    def get_keys(self):
-        self.sparql.setQuery("""
+key_query = """
                 PREFIX ns1: <http://rdf.siliconbeach.io/schema/sys/v1/>
                 SELECT DISTINCT ?label ?keyHash ?keyType ?keyUri ?userUri
                 WHERE { 
@@ -50,7 +34,22 @@ class RdfStore:
                         ns1:authorized_key.ssh_key ?keyUri;
                         ns1:authorized_key.label ?label  .                      
                 }
-                """)
-        self.sparql.setReturnFormat(JSON)
-        results = self.sparql.query().convert()
-        return results["results"]["bindings"]
+                """
+
+
+def main():
+    rdf_store = rdf_manager.RdfStore()
+
+    hosts = rdf_store.execute(host_query)
+
+    users = rdf_store.execute(user_query)
+
+    keys = rdf_store.execute(key_query)
+
+    odoo_proxy = odoo_client.OdooProxy()
+    odoo_proxy.import_hosts(hosts)
+    odoo_proxy.import_users(users)
+    odoo_proxy.import_keys(keys)
+
+if __name__ == '__main__':
+    main()
